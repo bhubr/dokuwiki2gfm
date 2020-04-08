@@ -8,6 +8,19 @@ rev_path = os.path.join(data_path, 'attic')
  
 path_len = len(data_path)
 changes_dict = {}
+authors_dict = {}
+
+try:
+    fa = open('authors.txt')
+    author_lines = fa.read().split('\n')
+    authors = list(filter(lambda x: x != '', author_lines))
+    for l in authors:
+        lb = l.split(': ')
+        username = lb[0]
+        full_identity = lb[1]
+        authors_dict[username] = full_identity
+except:
+    sys.exit("Could not find 'authors.txt'. Create it from the sample file")
 
 def is_revision(filename):
     return re.match(r".*\d+\.txt\.gz", filename)
@@ -38,7 +51,8 @@ def get_changes_info(filename):
         return
     lines = changes_content.split('\n')
     change_line = list(filter(lambda l: timestamp in l, lines))
-    print(change_line[0].split('\t'))
+    bits = change_line[0].split('\t')
+    return (bits[0], bits[3], bits[4], bits[5])
 
 def get_revisions():
     files = []
@@ -52,7 +66,13 @@ def get_revisions():
     sorted_files = sorted(files, key=lambda k: k.split('.')[-3:-2])
     for sf in sorted_files:
         file_base = sf.split('.')[0]
-        get_changes_info(sf)
+        ts, action_l, username, msg = get_changes_info(sf)
+        orig_file = re.sub(r'(.*)\.\d+\.txt\.gz', r'\1.txt', file);
+        action_verb = 'Creation ' if action_l == 'C' else 'MàJ '
+        commit_msg = msg if msg else action_verb + orig_file
+        author_identity = authors_dict.get(username)
+        print(orig_file, ts, author_identity, commit_msg)
+
     # print('\n'.join(sorted_files))
 
 def get_pages():
