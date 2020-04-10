@@ -4,7 +4,8 @@ import pathlib
 import re
 import subprocess
 
-data_path = '/Users/benoit/Documents/dokuwiki/data'
+doku_path = '/Users/benoit/Documents/dokuwiki'
+data_path = os.path.join(doku_path, 'data')
 pages_path = os.path.join(data_path, 'pages')
 meta_path = os.path.join(data_path, 'meta')
 rev_path = os.path.join(data_path, 'attic')
@@ -14,14 +15,18 @@ changes_dict = {}
 authors_dict = {}
 
 try:
-    fa = open('authors.txt')
+    users_file = os.path.join(doku_path, 'conf/users.auth.php')
+    fa = open(users_file)
     author_lines = fa.read().split('\n')
-    authors = list(filter(lambda x: x != '', author_lines))
+    authors = list(filter(lambda x: re.match(r"[a-z]+:.*", x), author_lines))
+    print(authors)
+    exit
     for l in authors:
-        lb = l.split(': ')
+        lb = l.split(':')
         username = lb[0]
-        full_identity = lb[1]
-        authors_dict[username] = full_identity
+        fullname = lb[2]
+        email = lb[3]
+        authors_dict[username] = (fullname, email) 
 except:
     sys.exit("Could not find 'authors.txt'. Create it from the sample file")
 
@@ -76,8 +81,8 @@ def doku_to_gfm(input_file, output_file, timestamp, identity, msg):
 
     git_add_call = subprocess.run(['git', 'add', output_file], cwd=repo_path)
 
-    name_email = re.findall(r"(.*) <([^>]*)>", identity)
-    name, email = name_email[0]
+#    name_email = re.findall(r"(.*) <([^>]*)>", identity)
+    name, email = identity
 
     git_env = os.environ.copy()
     git_env['GIT_COMMITTER_NAME'] = name
@@ -108,6 +113,7 @@ def get_revisions():
         action_verb = 'Creation ' if action_l == 'C' else 'MàJ '
         commit_msg = msg if msg else action_verb + orig_file
         author_identity = authors_dict.get(username)
+        name, email = author_identity
         print(sf, orig_file, ts, author_identity, commit_msg)
 
         doku_to_gfm(sf, orig_file, ts, author_identity, commit_msg)
