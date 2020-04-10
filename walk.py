@@ -1,5 +1,6 @@
 import os
 import re
+import subprocess
 
 data_path = '/Users/benoit/Documents/dokuwiki/data'
 pages_path = os.path.join(data_path, 'pages')
@@ -54,6 +55,15 @@ def get_changes_info(filename):
     bits = change_line[0].split('\t')
     return (bits[0], bits[3], bits[4], bits[5])
 
+def doku_to_gfm(input_file, output_file, timestamp, identity, msg):
+    input_fullpath = os.path.join(rev_path, input_file)
+    doku_content = ''
+    with gzip.open(input_fullpath, 'rb') as f:
+        doku_content = f.read()
+    output_fullpath = os.path.join(os.getcwd, 'testrepo', output_file)
+    pandoc_args = ['pandoc', '-f', 'dokuwiki', '-t', 'gfm', '-o', output_fullpath]
+    pandoc_call = subprocess.run(pandoc_args, stdout=subprocess.PIPE, text=True, input=doku_content)
+
 def get_revisions():
     files = []
     sub_index = len(rev_path) + 1
@@ -75,8 +85,9 @@ def get_revisions():
         action_verb = 'Creation ' if action_l == 'C' else 'MàJ '
         commit_msg = msg if msg else action_verb + orig_file
         author_identity = authors_dict.get(username)
-        print(orig_file, ts, author_identity, commit_msg)
+        print(sf, orig_file, ts, author_identity, commit_msg)
 
+        doku_to_gfm(sf, orig_file, ts, author_identity, commit_msg)
     # print('\n'.join(sorted_files))
 
 def get_pages():
