@@ -4,6 +4,7 @@ import pathlib
 import re
 import subprocess
 
+default_author = 'laurent'
 doku_path = '/Users/benoit/Documents/dokuwiki'
 data_path = os.path.join(doku_path, 'data')
 pages_path = os.path.join(data_path, 'pages')
@@ -113,6 +114,8 @@ def get_revisions():
         action_verb = 'Creation ' if action_l == 'C' else 'MàJ '
         commit_msg = msg if msg else action_verb + orig_file
         author_identity = authors_dict.get(username)
+        if not author_identity:
+            author_identity = authors_dict.get(default_author)
         name, email = author_identity
         print(sf, orig_file, ts, author_identity, commit_msg)
 
