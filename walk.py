@@ -14,7 +14,9 @@ rev_path = os.path.join(data_path, 'attic')
 path_len = len(data_path)
 changes_dict = {}
 authors_dict = {}
-
+replacements_dict = {
+    "start.txt": "Home.md"
+}
 try:
     users_file = os.path.join(doku_path, 'conf/users.auth.php')
     fa = open(users_file)
@@ -72,6 +74,7 @@ def doku_to_gfm(input_file, output_file, timestamp, identity, msg):
         # print('content: [' + doku_content.decode() + ']')
         # print(type(doku_content))
     repo_path = os.path.join(os.getcwd(), 'testrepo')
+
     output_fullpath = os.path.join(repo_path, output_file)
 
     output_dir = os.path.dirname(output_fullpath)
@@ -119,7 +122,11 @@ def get_revisions():
         name, email = author_identity
         print(sf, orig_file, ts, author_identity, commit_msg)
 
-        doku_to_gfm(sf, orig_file, ts, author_identity, commit_msg)
+        output_file = replacements_dict.get(orig_file)
+        if not output_file:
+            output_file = orig_file.replace('.txt', '.md')
+
+        doku_to_gfm(sf, output_file, ts, author_identity, commit_msg)
     # print('\n'.join(sorted_files))
 
 def get_pages():
