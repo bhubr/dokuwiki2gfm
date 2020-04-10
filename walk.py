@@ -1,4 +1,6 @@
+import gzip
 import os
+import pathlib
 import re
 import subprocess
 
@@ -58,11 +60,32 @@ def get_changes_info(filename):
 def doku_to_gfm(input_file, output_file, timestamp, identity, msg):
     input_fullpath = os.path.join(rev_path, input_file)
     doku_content = ''
-    with gzip.open(input_fullpath, 'rb') as f:
-        doku_content = f.read()
-    output_fullpath = os.path.join(os.getcwd, 'testrepo', output_file)
+    with gzip.open(input_fullpath, 'r') as f:
+        doku_bytes= f.read()
+        doku_content = doku_bytes.decode()
+        # print('content: [' + doku_content.decode() + ']')
+        # print(type(doku_content))
+    repo_path = os.path.join(os.getcwd(), 'testrepo')
+    output_fullpath = os.path.join(repo_path, output_file)
+
+    output_dir = os.path.dirname(output_fullpath)
+    pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
+
     pandoc_args = ['pandoc', '-f', 'dokuwiki', '-t', 'gfm', '-o', output_fullpath]
     pandoc_call = subprocess.run(pandoc_args, stdout=subprocess.PIPE, text=True, input=doku_content)
+
+    git_add_call = subprocess.run(['git', 'add', output_file], cwd=repo_path)
+
+    name_email = re.findall(r"(.*) <([^>]*)>", identity)
+    name, email = name_email[0]
+
+    git_env = os.environ.copy()
+    git_env['GIT_COMMITTER_NAME'] = name
+    git_env['GIT_AUTHOR_NAME'] = name
+    git_env['GIT_COMMITTER_EMAIL'] = email
+    git_env['GIT_AUTHOR_EMAIL'] = email
+    git_commit_args = ['git', 'commit', '-m', msg, '--date', timestamp]
+    git_commit_call = subprocess.run(git_commit_args, cwd=repo_path, env=git_env)
 
 def get_revisions():
     files = []
