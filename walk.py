@@ -66,8 +66,12 @@ def get_revisions():
     sorted_files = sorted(files, key=lambda k: k.split('.')[-3:-2])
     for sf in sorted_files:
         file_base = sf.split('.')[0]
-        ts, action_l, username, msg = get_changes_info(sf)
-        orig_file = re.sub(r'(.*)\.\d+\.txt\.gz', r'\1.txt', file);
+        changes_info = get_changes_info(sf)
+        if not changes_info:
+            print("WARNING! No info for " + sf)
+            continue
+        ts, action_l, username, msg = changes_info
+        orig_file = re.sub(r'(.*)\.\d+\.txt\.gz', r'\1.txt', sf);
         action_verb = 'Creation ' if action_l == 'C' else 'MàJ '
         commit_msg = msg if msg else action_verb + orig_file
         author_identity = authors_dict.get(username)
